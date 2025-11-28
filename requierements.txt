@@ -1,7 +1,3 @@
-aiogram
-asyncio
-difflab
-htppx
+aiogram==2.25.1
+httpx
 apscheduler
-json
-os
