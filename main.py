@@ -1,20 +1,16 @@
 import json, asyncio, os, httpx
 from aiogram import Bot, Dispatcher, executor, types
-from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from difflib import SequenceMatcher
 # from fuzzywuzzy import fuzz, process
 
-TOKEN = "None"
+TOKEN = os.getenv("TOKEN")
 FILE_NAME = "index.json"
 USER_CHAT_ID = None
 
 if not os.path.exists(FILE_NAME):
     with open(FILE_NAME, "w", encoding="utf-8") as f:
         json.dump({"tokens": []}, f, indent=4, ensure_ascii=False)
-
-print("Current working directory:", os.getcwd())
-print("index.json path:", os.path.abspath("index.json"))
-
 
 bot = Bot(TOKEN)
 dp = Dispatcher(bot)
@@ -93,11 +89,10 @@ def remove_token(token: str):
     return False
 
 async def token_list():
-
     tokens = get_tokens()
 
     if not tokens:
-        return ("Your list is empty.")
+        return "Your list is empty."
     
     text = "Your tokens:\n"
     
@@ -108,7 +103,8 @@ async def token_list():
         except:
             text += f"- {token}: invalid or not found on Binance\n"
 
-    await bot.send_message(USER_CHAT_ID, text)
+    return text
+
 
 @dp.message_handler(commands=["start"])
 async def cmd_start(message: types.Message):
@@ -165,29 +161,62 @@ async def cmd_list(message: types.Message):
     text = await token_list()
     await message.answer(text)
 
-
-
 @dp.message_handler(commands=["check"])
 async def cmd_check(message: types.Message):
-    token = message.text.replace("/check", "").strip().upper()
+    text = message.text.replace("/check", "").strip().upper()
 
-    try:
-        if token == "":
-            return await message.answer("Error: empty token.")
-        
-        result = await check_matches(token)
+    if text == "":
+        return await message.answer("Error: empty token.\nUse: /check <token> or /check <token> <amount>")
 
-        if isinstance(result, str) and "not found" in result:
-            return await message.answer(result)
+    parts = text.split()
 
-        token = token + "USDT"
+    if len(parts) == 1:
+        token = parts[0]
 
-        price, percentage = await get_price(token)
-        return await message.answer(f"{token}: {price} ({percentage}%)")
+        try:
+            result = await check_matches(token)
+            if isinstance(result, str) and "not found" in result:
+                return await message.answer(result)
 
-    except:
-        return await message.answer("Error. Make sure the token format is correct.")
-    
+            token = token + "USDT"
+
+            price, percentage = await get_price(token)
+            return await message.answer(f"{token}: {price} ({percentage}%)")
+
+        except:
+            return await message.answer("Error. Make sure the token format is correct.")
+
+    if len(parts) == 2:
+        token = parts[0]
+        amount_str = parts[1]
+
+        try:
+            amount = float(amount_str)
+        except ValueError:
+            return await message.answer("Amount must be a number.\nExample: /check TON 233")
+
+        try:
+            result = await check_matches(token)
+            if isinstance(result, str) and "not found" in result:
+                return await message.answer(result)
+
+            token = token + "USDT"
+
+            price, percentage = await get_price(token)
+            total_value = round(price * amount, 4)
+
+            text = (
+                f"{token}: {price} ({percentage}%)\n"
+                f"Amount: {amount}"
+            )
+
+            return await message.answer(text)
+
+        except:
+            return await message.answer("Error. Could not calculate total value.")
+
+    return await message.answer("Invalid format.\nUse: /check <token> or /check <token> <amount>")
+
 @dp.message_handler(commands=["set_time"])
 async def cmd_timer(message: types.Message):
     timer = message.text.replace("/set_time", "").strip()
@@ -220,4 +249,3 @@ async def on_startup(dp):
 if __name__ == "__main__":
     print("Bot is running...")
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
-
