@@ -4,7 +4,7 @@ from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # from fuzzywuzzy import fuzz, process
 
-TOKEN = "8342167314:AAGQKMu4dGJRoUvQm9ZEEjN6-KCLU1kiUtg"
+TOKEN = "None"
 FILE_NAME = "index.json"
 USER_CHAT_ID = None
 
@@ -220,3 +220,4 @@ async def on_startup(dp):
 if __name__ == "__main__":
     print("Bot is running...")
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
+
