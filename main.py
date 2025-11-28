@@ -2,11 +2,27 @@ import json, asyncio, os, httpx
 from aiogram import Bot, Dispatcher, executor, types
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from difflib import SequenceMatcher
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 # from fuzzywuzzy import fuzz, process
 
 TOKEN = os.getenv("TOKEN")
 FILE_NAME = "index.json"
 USER_CHAT_ID = None
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+
+def run_health_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    server.serve_forever()
+
+threading.Thread(target=run_health_server, daemon=True).start()
+
 
 if not os.path.exists(FILE_NAME):
     with open(FILE_NAME, "w", encoding="utf-8") as f:
