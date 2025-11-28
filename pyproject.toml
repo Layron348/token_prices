@@ -1,9 +1,6 @@
-[tool.poetry]
+[project]
 name = "token_prices"
 version = "0.1.0"
-description = ""
-authors = ["you"]
 
 [tool.poetry.dependencies]
-python = "3.11.7"
-
+python = "3.11"
