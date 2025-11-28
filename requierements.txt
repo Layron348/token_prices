@@ -1,0 +1,7 @@
+aiogram
+asyncio
+difflab
+htppx
+apscheduler
+json
+os
